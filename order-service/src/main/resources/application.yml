@@ -1,0 +1,64 @@
+server:
+  port: ${SERVER_PORT:8084}
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:shop}?currentSchema=orders
+    username: ${DB_USERNAME:shop}
+    password: ${DB_PASSWORD:shop}
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: orders
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    default-schema: orders
+    liquibase-schema: orders
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.type.mapping: orderPlaced:pl.shop.order.kafka.event.OrderPlacedEvent
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 5000
+            logger-level: basic
+
+app:
+  kafka:
+    topics:
+      product-created: product-created
+      order-placed: order-placed
+  clients:
+    cart-service:
+      url: ${CART_SERVICE_URL:http://localhost:8083}
+    inventory-service:
+      url: ${INVENTORY_SERVICE_URL:http://localhost:8082}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    root: INFO
+    pl.shop: DEBUG
+    pl.shop.order.client: DEBUG

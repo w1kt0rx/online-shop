@@ -1,0 +1,40 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: user-interaction-service
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connect-timeout: 2000
+            read-timeout: 5000
+            logger-level: basic
+
+app:
+  clients:
+    product-service:
+      url: ${PRODUCT_SERVICE_URL:http://localhost:8081}
+    inventory-service:
+      url: ${INVENTORY_SERVICE_URL:http://localhost:8082}
+    cart-service:
+      url: ${CART_SERVICE_URL:http://localhost:8083}
+    order-service:
+      url: ${ORDER_SERVICE_URL:http://localhost:8084}
+    invoice-service:
+      url: ${INVOICE_SERVICE_URL:http://localhost:8085}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  level:
+    root: INFO
+    pl.shop: DEBUG
+    pl.shop.userinteraction.client: DEBUG
