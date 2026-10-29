@@ -1,4 +1,7 @@
 databaseChangeLog:
-  # kazda zmiana schematu = NOWY plik (002-..., 003-...), nigdy nie edytuj juz wykonanych
   - include:
-      file: db/changelog/changes/001-init-schema.sql
+      file: changes/001-create-product-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-create-product-configuration-table.yaml
+      relativeToChangelogFile: true

@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: "2"
+      author: "w1kt0r"
+      changes:
+        - createTable:
+            tableName: product_configurations
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_product_configurations
+                    nullable: false
+              - column:
+                  name: product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_product_configurations_product
+                    references: products(id)
+                    deleteCascade: true
+              - column:
+                  name: component_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_product_configurations_component
+                    references: products(id)
+              - column:
+                  name: slot
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: default_component
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: multi_select
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+        - addUniqueConstraint:
+            tableName: product_configurations
+            constraintName: uq_product_slot_component
+            columnNames: product_id, slot, component_id
