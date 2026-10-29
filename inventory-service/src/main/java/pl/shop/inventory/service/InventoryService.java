@@ -81,6 +81,17 @@ public class InventoryService {
         log.info("Stock item created for product id = {}", productId);
     }
 
+    @Transactional
+    public void deleteStockProduct(Long productId) {
+        if(!inventoryRepository.existsByProductId(productId)) {
+            log.warn("Stock item for product id = {} doesn't exists, skipping", productId);
+            return;
+        }
+        StockItem stockItem = fetchByProductId(productId);
+        inventoryRepository.delete(stockItem);
+        log.info("Stock item deleted for product id = {}", productId);
+    }
+
     private StockItem fetchByProductId(Long productId) {
         return inventoryRepository.findByProductId(productId)
                 .orElseThrow(
