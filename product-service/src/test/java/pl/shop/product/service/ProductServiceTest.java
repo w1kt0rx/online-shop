@@ -42,14 +42,16 @@ public class ProductServiceTest {
     private ProductService productService;
     private ProductRepository productRepository;
     private ProductMapper productMapper;
+    private KafkaSender kafkaSender;
 
     @BeforeEach
     void setup() {
         this.productRepository = Mockito.mock(ProductRepository.class);
         this.productMapper = Mappers.getMapper(ProductMapper.class);
+        this.kafkaSender = Mockito.mock(KafkaSender.class);
         ReflectionTestUtils.setField(productMapper, "priceMapper", Mappers.getMapper(PriceMapper.class));
         ReflectionTestUtils.setField(productMapper, "productConfigurationMapper", Mappers.getMapper(ProductConfigurationMapper.class));
-        this.productService = new ProductService(productRepository, productMapper);
+        this.productService = new ProductService(productRepository, productMapper, kafkaSender);
     }
 
     @Test

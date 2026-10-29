@@ -58,6 +58,7 @@ public class ProductService {
         log.debug("Attempting to delete product with id = {}", id);
         Product product = fetchProduct(id);
         productRepository.delete(product);
+        kafkaSender.sendProductDeleted(product);
         productRepository.flush();
         log.info("Product with id = {} successfully deleted", product.getId());
     }
