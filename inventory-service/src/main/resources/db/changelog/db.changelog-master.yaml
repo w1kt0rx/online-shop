@@ -1,4 +1,3 @@
 databaseChangeLog:
-  # kazda zmiana schematu = NOWY plik (002-..., 003-...), nigdy nie edytuj juz wykonanych
   - include:
-      file: db/changelog/changes/001-init-schema.sql
+      file: db/changelog/changes/001-create-stock-items-table.yaml
