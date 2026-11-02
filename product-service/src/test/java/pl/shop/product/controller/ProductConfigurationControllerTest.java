@@ -13,12 +13,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.shop.product.dto.request.CreateProductConfigurationRequest;
+import pl.shop.product.dto.request.QuoteRequest;
+import pl.shop.product.dto.response.PriceResponse;
 import pl.shop.product.dto.response.ProductConfigurationResponse;
+import pl.shop.product.dto.response.QuoteComponentResponse;
+import pl.shop.product.dto.response.QuoteResponse;
 import pl.shop.product.exception.ConfigurationNotFoundException;
 import pl.shop.product.exception.InvalidConfigurationException;
 import pl.shop.product.exception.ProductNotFoundException;
 import pl.shop.product.service.ProductConfigurationService;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -42,13 +47,13 @@ public class ProductConfigurationControllerTest {
     private ProductConfigurationService configurationService;
 
     @Test
-    void getProductConfiguration_productExists_returnsConfigurationList() throws Exception {
+    void getProductConfigurations_productExists_returnsConfigurationList() throws Exception {
         //given
         ProductConfigurationResponse gpu = new ProductConfigurationResponse(1L, "Graphics card", 6L, "RTX 4060", true, false);
         ProductConfigurationResponse ram = new ProductConfigurationResponse(3L, "RAM", 7L, "RAM 16 GB DDR5", true, false);
         ArgumentCaptor<Long> idCaptor = ArgumentCaptor.forClass(Long.class);
-        when(configurationService.getProductConfiguration(1L)).thenReturn(List.of(gpu, ram));
-        //when + then
+        when(configurationService.getProductConfigurations(1L)).thenReturn(List.of(gpu, ram));
+        //when //then
         mockMvc.perform(get("/products/{productId}/configurations", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
@@ -56,25 +61,25 @@ public class ProductConfigurationControllerTest {
                 .andExpect(jsonPath("$[0].componentName").value("RTX 4060"))
                 .andExpect(jsonPath("$[0].defaultComponent").value(true))
                 .andExpect(jsonPath("$[1].slot").value("RAM"));
-        Mockito.verify(configurationService).getProductConfiguration(idCaptor.capture());
+        Mockito.verify(configurationService).getProductConfigurations(idCaptor.capture());
         Assertions.assertEquals(1L, idCaptor.getValue());
     }
 
     @Test
-    void getProductConfiguration_noConfigurations_returnsEmptyList() throws Exception {
+    void getProductConfigurations_noConfigurations_returnsEmptyList() throws Exception {
         //given
-        when(configurationService.getProductConfiguration(5L)).thenReturn(List.of());
-        //when + then
+        when(configurationService.getProductConfigurations(5L)).thenReturn(List.of());
+        //when //then
         mockMvc.perform(get("/products/{productId}/configurations", 5L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test
-    void getProductConfiguration_productNotExists_returnsNotFoundWithMessage() throws Exception {
+    void getProductConfigurations_productNotExists_returnsNotFoundWithMessage() throws Exception {
         //given
-        when(configurationService.getProductConfiguration(999L)).thenThrow(new ProductNotFoundException(999L));
-        //when + then
+        when(configurationService.getProductConfigurations(999L)).thenThrow(new ProductNotFoundException(999L));
+        //when //then
         mockMvc.perform(get("/products/{productId}/configurations", 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("PRODUCT_NOT_FOUND"))
@@ -90,7 +95,7 @@ public class ProductConfigurationControllerTest {
         ArgumentCaptor<CreateProductConfigurationRequest> requestCaptor = ArgumentCaptor.forClass(CreateProductConfigurationRequest.class);
         when(configurationService.createProductConfiguration(anyLong(), any(CreateProductConfigurationRequest.class)))
                 .thenReturn(response);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -115,7 +120,7 @@ public class ProductConfigurationControllerTest {
     void createProductConfiguration_componentIdNull_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(null, "Graphics card", true, false);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -129,7 +134,7 @@ public class ProductConfigurationControllerTest {
     void createProductConfiguration_slotBlank_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(6L, "", true, false);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -143,7 +148,7 @@ public class ProductConfigurationControllerTest {
     void createProductConfiguration_slotTooLong_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(6L, "a".repeat(101), true, false);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -158,8 +163,8 @@ public class ProductConfigurationControllerTest {
         //given
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(4L, "Graphics card", true, false);
         when(configurationService.createProductConfiguration(anyLong(), any(CreateProductConfigurationRequest.class)))
-                .thenThrow(new InvalidConfigurationException("Slot already has a default component: Graphics carda"));
-        //when + then
+                .thenThrow(new InvalidConfigurationException("Slot already has a default component: Graphics card"));
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -174,7 +179,7 @@ public class ProductConfigurationControllerTest {
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(6L, "Graphics card", true, false);
         when(configurationService.createProductConfiguration(anyLong(), any(CreateProductConfigurationRequest.class)))
                 .thenThrow(new ProductNotFoundException(999L));
-        //when + then
+        //when //then
         mockMvc.perform(post("/products/{productId}/configurations", 999L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -188,7 +193,7 @@ public class ProductConfigurationControllerTest {
         //given
         ArgumentCaptor<Long> productIdCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<Long> configurationIdCaptor = ArgumentCaptor.forClass(Long.class);
-        //when + then
+        //when //then
         mockMvc.perform(delete("/products/{productId}/configurations/{configurationId}", 1L, 4L))
                 .andExpect(status().isNoContent());
         Mockito.verify(configurationService).deleteProductConfiguration(productIdCaptor.capture(), configurationIdCaptor.capture());
@@ -203,10 +208,105 @@ public class ProductConfigurationControllerTest {
         //given
         Mockito.doThrow(new ConfigurationNotFoundException(999L))
                 .when(configurationService).deleteProductConfiguration(1L, 999L);
-        //when + then
+        //when //then
         mockMvc.perform(delete("/products/{productId}/configurations/{configurationId}", 1L, 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("CONFIGURATION_NOT_FOUND"))
                 .andExpect(jsonPath("$.message", Matchers.containsString("999")));
+    }
+
+    @Test
+    void quote_dataCorrect_returnsQuote() throws Exception {
+        //given
+        QuoteRequest request = new QuoteRequest(List.of(11L));
+        QuoteResponse response = new QuoteResponse(1L, "Gaming PC Pro",
+                List.of(new QuoteComponentResponse(11L, 4L, "Graphics card", "RTX 4070")),
+                new PriceResponse(new BigDecimal("5855.00"), new BigDecimal("0.23"), new BigDecimal("1346.65"),
+                        new BigDecimal("7201.65"), "PLN"),
+                List.of(1L, 4L));
+        ArgumentCaptor<Long> productIdCaptor = ArgumentCaptor.forClass(Long.class);
+        ArgumentCaptor<QuoteRequest> requestCaptor = ArgumentCaptor.forClass(QuoteRequest.class);
+        when(configurationService.quote(anyLong(), any(QuoteRequest.class))).thenReturn(response);
+        //when //then
+        mockMvc.perform(post("/products/{productId}/configurations/quote", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.productId").value(1L))
+                .andExpect(jsonPath("$.productName").value("Gaming PC Pro"))
+                .andExpect(jsonPath("$.selectedComponents", hasSize(1)))
+                .andExpect(jsonPath("$.selectedComponents[0].configurationId").value(11L))
+                .andExpect(jsonPath("$.selectedComponents[0].componentProductId").value(4L))
+                .andExpect(jsonPath("$.selectedComponents[0].slot").value("Graphics card"))
+                .andExpect(jsonPath("$.selectedComponents[0].componentName").value("RTX 4070"))
+                .andExpect(jsonPath("$.unitPrice.netPrice").value(5855.00))
+                .andExpect(jsonPath("$.unitPrice.grossPrice").value(7201.65))
+                .andExpect(jsonPath("$.stockProductIds", hasSize(2)))
+                .andExpect(jsonPath("$.stockProductIds[1]").value(4L));
+        Mockito.verify(configurationService).quote(productIdCaptor.capture(), requestCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(1L, productIdCaptor.getValue()),
+                () -> Assertions.assertEquals(List.of(11L), requestCaptor.getValue().configurationIds())
+        );
+    }
+
+    @Test
+    void quote_configurationIdsMissing_emptyListPassedToService() throws Exception {
+        //given
+        QuoteResponse response = new QuoteResponse(1L, "Gaming PC Pro", List.of(),
+                new PriceResponse(new BigDecimal("4800.00"), new BigDecimal("0.23"), new BigDecimal("1104.00"),
+                        new BigDecimal("5904.00"), "PLN"),
+                List.of(1L));
+        ArgumentCaptor<QuoteRequest> requestCaptor = ArgumentCaptor.forClass(QuoteRequest.class);
+        when(configurationService.quote(anyLong(), any(QuoteRequest.class))).thenReturn(response);
+        //when //then
+        mockMvc.perform(post("/products/{productId}/configurations/quote", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.unitPrice.netPrice").value(4800.00));
+        Mockito.verify(configurationService).quote(anyLong(), requestCaptor.capture());
+        Assertions.assertTrue(requestCaptor.getValue().configurationIds().isEmpty());
+    }
+
+    @Test
+    void quote_configurationIdNull_returnsBadRequestWithMessage() throws Exception {
+        //given
+        String body = "{\"configurationIds\":[11,null]}";
+        //when //then
+        mockMvc.perform(post("/products/{productId}/configurations/quote", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("ARGUMENT_NOT_VALID"))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Configuration ID cannot be null")));
+        Mockito.verify(configurationService, Mockito.never()).quote(anyLong(), any());
+    }
+
+    @Test
+    void quote_invalidConfiguration_returnsBadRequestWithMessage() throws Exception {
+        //given
+        when(configurationService.quote(anyLong(), any(QuoteRequest.class)))
+                .thenThrow(new InvalidConfigurationException("Configurations [99] do not belong to product id = 1"));
+        //when //then
+        mockMvc.perform(post("/products/{productId}/configurations/quote", 1L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new QuoteRequest(List.of(99L)))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("INVALID_CONFIGURATION"))
+                .andExpect(jsonPath("$.message").value("Configurations [99] do not belong to product id = 1"));
+    }
+
+    @Test
+    void quote_productNotExists_returnsNotFoundWithMessage() throws Exception {
+        //given
+        when(configurationService.quote(anyLong(), any(QuoteRequest.class)))
+                .thenThrow(new ProductNotFoundException(999L));
+        //when //then
+        mockMvc.perform(post("/products/{productId}/configurations/quote", 999L)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new QuoteRequest(List.of()))))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("PRODUCT_NOT_FOUND"));
     }
 }

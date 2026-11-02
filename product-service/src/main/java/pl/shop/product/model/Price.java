@@ -1,11 +1,9 @@
 package pl.shop.product.model;
 
 import jakarta.persistence.Embeddable;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import pl.shop.product.exception.InvalidCurrencyException;
 import pl.shop.product.exception.InvalidNetPriceException;
 import pl.shop.product.exception.InvalidVatRateException;
@@ -25,7 +23,6 @@ public class Price {
         validateNetPrice(netPrice);
         validateVatRate(vatRate);
         validateCurrency(currency);
-
         this.netPrice = netPrice.setScale(2, RoundingMode.HALF_UP);
         this.vatRate = vatRate.setScale(2, RoundingMode.HALF_UP);
         this.currency = currency;
@@ -41,10 +38,6 @@ public class Price {
 
     public Price withNetPrice(BigDecimal newNetPrice) {
         return new Price(newNetPrice, vatRate, currency);
-    }
-
-    public Price withVatRate(BigDecimal newVatRate) {
-        return new Price(netPrice, newVatRate, currency);
     }
 
     private void validateNetPrice(BigDecimal netPrice) {

@@ -7,10 +7,13 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import pl.shop.product.dto.request.CreateProductConfigurationRequest;
+import pl.shop.product.dto.request.QuoteRequest;
 import pl.shop.product.dto.response.ProductConfigurationResponse;
+import pl.shop.product.dto.response.QuoteResponse;
 import pl.shop.product.exception.ConfigurationNotFoundException;
 import pl.shop.product.exception.InvalidConfigurationException;
 import pl.shop.product.exception.ProductNotFoundException;
+import pl.shop.product.mapper.PriceMapper;
 import pl.shop.product.mapper.ProductConfigurationMapper;
 import pl.shop.product.model.Price;
 import pl.shop.product.model.Product;
@@ -32,12 +35,13 @@ public class ProductConfigurationServiceTest {
     void setup() {
         this.productRepository = Mockito.mock(ProductRepository.class);
         this.configurationMapper = Mappers.getMapper(ProductConfigurationMapper.class);
+        ReflectionTestUtils.setField(configurationMapper, "priceMapper", Mappers.getMapper(PriceMapper.class));
         this.configurationService = new ProductConfigurationService(productRepository, configurationMapper);
     }
 
     @Test
-    void getProductConfiguration_productExists_returnsMappedList() {
-        // given
+    void getProductConfigurations_productExists_returnsMappedList() {
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
@@ -52,9 +56,9 @@ public class ProductConfigurationServiceTest {
         ProductConfiguration ramConfiguration = pc.addConfiguration(ram, "RAM", true, false);
         ReflectionTestUtils.setField(ramConfiguration, "id", 3L);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
-        // when
-        List<ProductConfigurationResponse> responses = configurationService.getProductConfiguration(1L);
-        // then
+        //when
+        List<ProductConfigurationResponse> responses = configurationService.getProductConfigurations(1L);
+        //then
         Assertions.assertAll(
                 () -> Assertions.assertEquals(2, responses.size()),
                 () -> Assertions.assertEquals(1L, responses.getFirst().id()),
@@ -67,33 +71,33 @@ public class ProductConfigurationServiceTest {
     }
 
     @Test
-    void getProductConfiguration_noConfigurations_returnsEmptyList() {
-        // given
+    void getProductConfigurations_noConfigurations_returnsEmptyList() {
+        //given
         Product headphones = new Product("Headphones ABC", "Electronics", "Sony",
                 new Price(new BigDecimal("240.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(headphones, "id", 5L);
         when(productRepository.findById(5L)).thenReturn(Optional.of(headphones));
-        // when
-        List<ProductConfigurationResponse> responses = configurationService.getProductConfiguration(5L);
-        // then
+        //when
+        List<ProductConfigurationResponse> responses = configurationService.getProductConfigurations(5L);
+        //then
         Assertions.assertTrue(responses.isEmpty());
     }
 
     @Test
-    void getProductConfiguration_productNotExists_throwsProductNotFoundException() {
-        // given
+    void getProductConfigurations_productNotExists_throwsProductNotFoundException() {
+        //given
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
-        // when + then
+        //when //then
         ProductNotFoundException ex = Assertions.assertThrows(
                 ProductNotFoundException.class,
-                () -> configurationService.getProductConfiguration(999L)
+                () -> configurationService.getProductConfigurations(999L)
         );
         Assertions.assertEquals("Couldn't find product with id: 999", ex.getMessage());
     }
 
     @Test
     void createProductConfiguration_dataCorrect_configurationCreatedWithId() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
@@ -107,9 +111,9 @@ public class ProductConfigurationServiceTest {
             ReflectionTestUtils.setField(pc.getConfigurations().getFirst(), "id", 10L);
             return null;
         }).when(productRepository).flush();
-        // when
+        //when
         ProductConfigurationResponse response = configurationService.createProductConfiguration(1L, request);
-        // then
+        //then
         Mockito.verify(productRepository).flush();
         Assertions.assertAll(
                 () -> Assertions.assertEquals(10L, response.id()),
@@ -126,10 +130,10 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void createProductConfiguration_productNotExists_throwsProductNotFoundException() {
-        // given
+        //given
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(4L, "Graphics card", true, false);
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
-        // when + then
+        //when //then
         ProductNotFoundException ex = Assertions.assertThrows(
                 ProductNotFoundException.class,
                 () -> configurationService.createProductConfiguration(999L, request)
@@ -140,14 +144,14 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void createProductConfiguration_componentNotExists_throwsProductNotFoundException() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(999L, "Graphics card", true, false);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
-        // when + then
+        //when //then
         ProductNotFoundException ex = Assertions.assertThrows(
                 ProductNotFoundException.class,
                 () -> configurationService.createProductConfiguration(1L, request)
@@ -161,13 +165,13 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void createProductConfiguration_componentSameAsProduct_throwsInvalidConfigurationException() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(1L, "Graphics card", true, false);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
-        // when + then
+        //when //then
         InvalidConfigurationException ex = Assertions.assertThrows(
                 InvalidConfigurationException.class,
                 () -> configurationService.createProductConfiguration(1L, request)
@@ -182,7 +186,7 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void createProductConfiguration_componentAlreadyInSlot_throwsInvalidConfigurationException() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
@@ -194,7 +198,7 @@ public class ProductConfigurationServiceTest {
         CreateProductConfigurationRequest request = new CreateProductConfigurationRequest(4L, "Graphics card", false, false);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
         when(productRepository.findById(4L)).thenReturn(Optional.of(gpu));
-        // when + then
+        //when //then
         InvalidConfigurationException ex = Assertions.assertThrows(
                 InvalidConfigurationException.class,
                 () -> configurationService.createProductConfiguration(1L, request)
@@ -208,7 +212,7 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void deleteProductConfiguration_configurationExists_configurationRemovedAndFlushed() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
@@ -218,16 +222,16 @@ public class ProductConfigurationServiceTest {
         ProductConfiguration configuration = pc.addConfiguration(gpu, "Graphics card", false, false);
         ReflectionTestUtils.setField(configuration, "id", 10L);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
-        // when
+        //when
         configurationService.deleteProductConfiguration(1L, 10L);
-        // then
+        //then
         Mockito.verify(productRepository).flush();
         Assertions.assertTrue(pc.getConfigurations().isEmpty());
     }
 
     @Test
     void deleteProductConfiguration_configurationNotExists_throwsConfigurationNotFoundException() {
-        // given
+        //given
         Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
                 new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         ReflectionTestUtils.setField(pc, "id", 1L);
@@ -237,7 +241,7 @@ public class ProductConfigurationServiceTest {
         ProductConfiguration configuration = pc.addConfiguration(gpu, "Graphics card", false, false);
         ReflectionTestUtils.setField(configuration, "id", 10L);
         when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
-        // when + then
+        //when //then
         ConfigurationNotFoundException ex = Assertions.assertThrows(
                 ConfigurationNotFoundException.class,
                 () -> configurationService.deleteProductConfiguration(1L, 999L)
@@ -252,14 +256,108 @@ public class ProductConfigurationServiceTest {
 
     @Test
     void deleteProductConfiguration_productNotExists_throwsProductNotFoundException() {
-        // given
+        //given
         when(productRepository.findById(999L)).thenReturn(Optional.empty());
-        // when + then
+        //when //then
         ProductNotFoundException ex = Assertions.assertThrows(
                 ProductNotFoundException.class,
                 () -> configurationService.deleteProductConfiguration(999L, 10L)
         );
         Assertions.assertEquals("Couldn't find product with id: 999", ex.getMessage());
         Mockito.verify(productRepository, Mockito.never()).flush();
+    }
+
+    @Test
+    void quote_noConfigurationsRequested_defaultsSelectedAndBasePriceReturned() {
+        //given
+        Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
+                new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(pc, "id", 1L);
+        Product rtx4060 = new Product("RTX 4060", "Electronics", "NVIDIA",
+                new Price(new BigDecimal("1220.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(rtx4060, "id", 6L);
+        Product rtx4070 = new Product("RTX 4070", "Electronics", "NVIDIA",
+                new Price(new BigDecimal("2275.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(rtx4070, "id", 4L);
+        ProductConfiguration defaultGpu = pc.addConfiguration(rtx4060, "Graphics card", true, false);
+        ReflectionTestUtils.setField(defaultGpu, "id", 10L);
+        ProductConfiguration upgradeGpu = pc.addConfiguration(rtx4070, "Graphics card", false, false);
+        ReflectionTestUtils.setField(upgradeGpu, "id", 11L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
+        //when
+        QuoteResponse response = configurationService.quote(1L, new QuoteRequest(List.of()));
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(1L, response.productId()),
+                () -> Assertions.assertEquals("Gaming PC Pro", response.productName()),
+                () -> Assertions.assertEquals(1, response.selectedComponents().size()),
+                () -> Assertions.assertEquals(10L, response.selectedComponents().getFirst().configurationId()),
+                () -> Assertions.assertEquals(6L, response.selectedComponents().getFirst().componentProductId()),
+                () -> Assertions.assertEquals("Graphics card", response.selectedComponents().getFirst().slot()),
+                () -> Assertions.assertEquals("RTX 4060", response.selectedComponents().getFirst().componentName()),
+                () -> Assertions.assertEquals(new BigDecimal("4800.00"), response.unitPrice().netPrice()),
+                () -> Assertions.assertEquals(new BigDecimal("5904.00"), response.unitPrice().grossPrice()),
+                () -> Assertions.assertEquals("PLN", response.unitPrice().currency()),
+                () -> Assertions.assertEquals(List.of(1L, 6L), response.stockProductIds())
+        );
+    }
+
+    @Test
+    void quote_upgradeRequested_priceIncreasedByDifference() {
+        //given
+        Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
+                new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(pc, "id", 1L);
+        Product rtx4060 = new Product("RTX 4060", "Electronics", "NVIDIA",
+                new Price(new BigDecimal("1220.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(rtx4060, "id", 6L);
+        Product rtx4070 = new Product("RTX 4070", "Electronics", "NVIDIA",
+                new Price(new BigDecimal("2275.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(rtx4070, "id", 4L);
+        ProductConfiguration defaultGpu = pc.addConfiguration(rtx4060, "Graphics card", true, false);
+        ReflectionTestUtils.setField(defaultGpu, "id", 10L);
+        ProductConfiguration upgradeGpu = pc.addConfiguration(rtx4070, "Graphics card", false, false);
+        ReflectionTestUtils.setField(upgradeGpu, "id", 11L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
+        //when
+        QuoteResponse response = configurationService.quote(1L, new QuoteRequest(List.of(11L)));
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(1, response.selectedComponents().size()),
+                () -> Assertions.assertEquals(11L, response.selectedComponents().getFirst().configurationId()),
+                () -> Assertions.assertEquals("RTX 4070", response.selectedComponents().getFirst().componentName()),
+                () -> Assertions.assertEquals(new BigDecimal("5855.00"), response.unitPrice().netPrice()),
+                () -> Assertions.assertEquals(List.of(1L, 4L), response.stockProductIds())
+        );
+    }
+
+    @Test
+    void quote_configurationFromOtherProduct_throwsInvalidConfigurationException() {
+        //given
+        Product pc = new Product("Gaming PC Pro", "Computer", "MyShop",
+                new Price(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        ReflectionTestUtils.setField(pc, "id", 1L);
+        when(productRepository.findById(1L)).thenReturn(Optional.of(pc));
+        //when //then
+        InvalidConfigurationException ex = Assertions.assertThrows(
+                InvalidConfigurationException.class,
+                () -> configurationService.quote(1L, new QuoteRequest(List.of(99L)))
+        );
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("INVALID_CONFIGURATION", ex.getErrorCode()),
+                () -> Assertions.assertEquals("Configurations [99] do not belong to product id = 1", ex.getMessage())
+        );
+    }
+
+    @Test
+    void quote_productNotExists_throwsProductNotFoundException() {
+        //given
+        when(productRepository.findById(999L)).thenReturn(Optional.empty());
+        //when //then
+        ProductNotFoundException ex = Assertions.assertThrows(
+                ProductNotFoundException.class,
+                () -> configurationService.quote(999L, new QuoteRequest(List.of()))
+        );
+        Assertions.assertEquals("Couldn't find product with id: 999", ex.getMessage());
     }
 }

@@ -9,6 +9,7 @@ import pl.shop.product.model.Product;
 
 @Mapper(componentModel = "spring", uses = {PriceMapper.class, ProductConfigurationMapper.class})
 public interface ProductMapper {
+
     @Mapping(target = "configurations", ignore = true)
     Product toEntity(CreateProductRequest request);
 

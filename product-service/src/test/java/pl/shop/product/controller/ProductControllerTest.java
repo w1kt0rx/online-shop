@@ -15,11 +15,11 @@ import org.springframework.data.util.TypeInformation;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import pl.shop.product.dto.request.CreatePriceRequest;
+import pl.shop.product.dto.request.PriceRequest;
 import pl.shop.product.dto.request.CreateProductRequest;
-import pl.shop.product.dto.request.PageRequestDto;
+import pl.shop.product.dto.request.PaginationRequest;
 import pl.shop.product.dto.request.UpdateProductRequest;
-import pl.shop.product.dto.response.PageDto;
+import pl.shop.product.dto.response.PageResponse;
 import pl.shop.product.dto.response.PriceResponse;
 import pl.shop.product.dto.response.ProductResponse;
 import pl.shop.product.dto.response.ProductSummaryResponse;
@@ -56,13 +56,13 @@ public class ProductControllerTest {
     void createProduct_dataCorrect_returnsCreatedProduct() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
         PriceResponse priceResponse = new PriceResponse(new BigDecimal("4800.00"), new BigDecimal("0.23"),
                 new BigDecimal("1104.00"), new BigDecimal("5904.00"), "PLN");
         ProductResponse response = new ProductResponse(1L, "Gaming PC Pro", "Computer", "MyShop", priceResponse, true, List.of());
         ArgumentCaptor<CreateProductRequest> requestCaptor = ArgumentCaptor.forClass(CreateProductRequest.class);
         when(productService.createProduct(any(CreateProductRequest.class))).thenReturn(response);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -87,8 +87,8 @@ public class ProductControllerTest {
     void createProduct_nameBlank_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -102,8 +102,8 @@ public class ProductControllerTest {
     void createProduct_categoryBlank_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", " ", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -117,8 +117,8 @@ public class ProductControllerTest {
     void createProduct_vendorBlank_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -132,7 +132,7 @@ public class ProductControllerTest {
     void createProduct_priceNull_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop", null, true);
-        //when + then
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -146,8 +146,8 @@ public class ProductControllerTest {
     void createProduct_netPriceNegative_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("-1.00"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("-1.00"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -161,8 +161,8 @@ public class ProductControllerTest {
     void createProduct_netPriceThreeDecimals_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("10.999"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("10.999"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -176,8 +176,8 @@ public class ProductControllerTest {
     void createProduct_vatRateAboveOne_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("1.50"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("1.50"), "PLN"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -191,8 +191,8 @@ public class ProductControllerTest {
     void createProduct_currencyLowercase_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "pln"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "pln"), true);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -206,8 +206,8 @@ public class ProductControllerTest {
     void createProduct_sellableSeparatelyNull_returnsBadRequestWithMessage() throws Exception {
         //given
         CreateProductRequest request = new CreateProductRequest("Gaming PC Pro", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), null);
-        //when + then
+                new PriceRequest(new BigDecimal("4800.00"), new BigDecimal("0.23"), "PLN"), null);
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -221,7 +221,7 @@ public class ProductControllerTest {
     void createProduct_malformedJson_returnsBadRequestWithMessage() throws Exception {
         //given
         String malformedJson = "{\"name\": \"Gaming PC Pro\",";
-        //when + then
+        //when //then
         mockMvc.perform(post("/products")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(malformedJson))
@@ -238,7 +238,7 @@ public class ProductControllerTest {
         ProductResponse response = new ProductResponse(1L, "Gaming PC Pro", "Computer", "MyShop", priceResponse, true, List.of());
         ArgumentCaptor<Long> idCaptor = ArgumentCaptor.forClass(Long.class);
         when(productService.getProduct(1L)).thenReturn(response);
-        //when + then
+        //when //then
         mockMvc.perform(get("/products/{id}", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1L))
@@ -253,7 +253,7 @@ public class ProductControllerTest {
     void getProduct_productNotExists_returnsNotFoundWithMessage() throws Exception {
         //given
         when(productService.getProduct(999L)).thenThrow(new ProductNotFoundException(999L));
-        //when + then
+        //when //then
         mockMvc.perform(get("/products/{id}", 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("PRODUCT_NOT_FOUND"))
@@ -262,14 +262,13 @@ public class ProductControllerTest {
 
     @Test
     void getProduct_idNotNumber_returnsBadRequestWithMessage() throws Exception {
-        //when + then
+        //when //then
         mockMvc.perform(get("/products/{id}", "abc"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("TYPE_MISMATCH"));
         Mockito.verify(productService, Mockito.never()).getProduct(anyLong());
     }
 
-    // ---------- GET /products ----------
 
     @Test
     void getAllProducts_noParams_defaultPageRequestPassedToService() throws Exception {
@@ -277,11 +276,11 @@ public class ProductControllerTest {
         PriceResponse priceResponse = new PriceResponse(new BigDecimal("4800.00"), new BigDecimal("0.23"),
                 new BigDecimal("1104.00"), new BigDecimal("5904.00"), "PLN");
         ProductSummaryResponse summary = new ProductSummaryResponse(1L, "Gaming PC Pro", "Computer", "MyShop", priceResponse, false);
-        PageDto<ProductSummaryResponse> page = new PageDto<>(List.of(summary), 0, 20, 1L, 1);
+        PageResponse<ProductSummaryResponse> page = new PageResponse<>(List.of(summary), 0, 20, 1L, 1);
         ArgumentCaptor<String> categoryCaptor = ArgumentCaptor.forClass(String.class);
-        ArgumentCaptor<PageRequestDto> pageRequestCaptor = ArgumentCaptor.forClass(PageRequestDto.class);
-        when(productService.getAllProducts(any(), any(PageRequestDto.class))).thenReturn(page);
-        //when + then
+        ArgumentCaptor<PaginationRequest> pageRequestCaptor = ArgumentCaptor.forClass(PaginationRequest.class);
+        when(productService.getAllProducts(any(), any(PaginationRequest.class))).thenReturn(page);
+        //when //then
         mockMvc.perform(get("/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content", hasSize(1)))
@@ -306,24 +305,24 @@ public class ProductControllerTest {
         PriceResponse priceResponse = new PriceResponse(new BigDecimal("4800.00"), new BigDecimal("0.23"),
                 new BigDecimal("1104.00"), new BigDecimal("5904.00"), "PLN");
         ProductSummaryResponse summary = new ProductSummaryResponse(1L, "Gaming PC Pro", "Computer", "MyShop", priceResponse, false);
-        PageDto<ProductSummaryResponse> page = new PageDto<>(List.of(summary), 0, 20, 1L, 1);
+        PageResponse<ProductSummaryResponse> page = new PageResponse<>(List.of(summary), 0, 20, 1L, 1);
         ArgumentCaptor<String> categoryCaptor = ArgumentCaptor.forClass(String.class);
-        when(productService.getAllProducts(any(), any(PageRequestDto.class))).thenReturn(page);
-        //when + then
+        when(productService.getAllProducts(any(), any(PaginationRequest.class))).thenReturn(page);
+        //when //then
         mockMvc.perform(get("/products").param("category", "Computer"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].category").value("Computer"));
-        Mockito.verify(productService).getAllProducts(categoryCaptor.capture(), any(PageRequestDto.class));
+        Mockito.verify(productService).getAllProducts(categoryCaptor.capture(), any(PaginationRequest.class));
         Assertions.assertEquals("Computer", categoryCaptor.getValue());
     }
 
     @Test
     void getAllProducts_pagingParamsGiven_paramsPassedToService() throws Exception {
         //given
-        PageDto<ProductSummaryResponse> page = new PageDto<>(List.of(), 1, 5, 6L, 2);
-        ArgumentCaptor<PageRequestDto> pageRequestCaptor = ArgumentCaptor.forClass(PageRequestDto.class);
-        when(productService.getAllProducts(any(), any(PageRequestDto.class))).thenReturn(page);
-        //when + then
+        PageResponse<ProductSummaryResponse> page = new PageResponse<>(List.of(), 1, 5, 6L, 2);
+        ArgumentCaptor<PaginationRequest> pageRequestCaptor = ArgumentCaptor.forClass(PaginationRequest.class);
+        when(productService.getAllProducts(any(), any(PaginationRequest.class))).thenReturn(page);
+        //when //then
         mockMvc.perform(get("/products")
                         .param("page", "1")
                         .param("size", "5")
@@ -343,7 +342,7 @@ public class ProductControllerTest {
 
     @Test
     void getAllProducts_pageSizeZero_returnsBadRequestWithMessage() throws Exception {
-        //when + then
+        //when //then
         mockMvc.perform(get("/products").param("size", "0"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("ARGUMENT_NOT_VALID"))
@@ -353,7 +352,7 @@ public class ProductControllerTest {
 
     @Test
     void getAllProducts_pageSizeAboveMax_returnsBadRequestWithMessage() throws Exception {
-        //when + then
+        //when //then
         mockMvc.perform(get("/products").param("size", "101"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("ARGUMENT_NOT_VALID"))
@@ -363,7 +362,7 @@ public class ProductControllerTest {
 
     @Test
     void getAllProducts_pageNegative_returnsBadRequestWithMessage() throws Exception {
-        //when + then
+        //when //then
         mockMvc.perform(get("/products").param("page", "-1"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("ARGUMENT_NOT_VALID"))
@@ -373,7 +372,7 @@ public class ProductControllerTest {
 
     @Test
     void getAllProducts_directionInvalid_returnsBadRequest() throws Exception {
-        //when + then
+        //when //then
         mockMvc.perform(get("/products").param("direction", "UP"))
                 .andExpect(status().isBadRequest());
         Mockito.verify(productService, Mockito.never()).getAllProducts(any(), any());
@@ -382,9 +381,9 @@ public class ProductControllerTest {
     @Test
     void getAllProducts_invalidSortProperty_returnsBadRequestWithMessage() throws Exception {
         //given
-        when(productService.getAllProducts(any(), any(PageRequestDto.class)))
+        when(productService.getAllProducts(any(), any(PaginationRequest.class)))
                 .thenThrow(new PropertyReferenceException("abc", TypeInformation.of(Product.class), List.of()));
-        //when + then
+        //when //then
         mockMvc.perform(get("/products").param("sortBy", "abc"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errorCode").value("INVALID_SORT_PROPERTY"))
@@ -395,14 +394,14 @@ public class ProductControllerTest {
     void updateProduct_dataCorrect_returnsUpdatedProduct() throws Exception {
         //given
         UpdateProductRequest request = new UpdateProductRequest("Office PC v2", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
+                new PriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
         PriceResponse priceResponse = new PriceResponse(new BigDecimal("2600.00"), new BigDecimal("0.23"),
                 new BigDecimal("598.00"), new BigDecimal("3198.00"), "PLN");
         ProductResponse response = new ProductResponse(2L, "Office PC v2", "Computer", "MyShop", priceResponse, true, List.of());
         ArgumentCaptor<Long> idCaptor = ArgumentCaptor.forClass(Long.class);
         ArgumentCaptor<UpdateProductRequest> requestCaptor = ArgumentCaptor.forClass(UpdateProductRequest.class);
         when(productService.updateProduct(anyLong(), any(UpdateProductRequest.class))).thenReturn(response);
-        //when + then
+        //when //then
         mockMvc.perform(put("/products/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -422,10 +421,10 @@ public class ProductControllerTest {
     void updateProduct_productNotExists_returnsNotFoundWithMessage() throws Exception {
         //given
         UpdateProductRequest request = new UpdateProductRequest("Office PC v2", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
+                new PriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
         when(productService.updateProduct(anyLong(), any(UpdateProductRequest.class)))
                 .thenThrow(new ProductNotFoundException(999L));
-        //when + then
+        //when //then
         mockMvc.perform(put("/products/{id}", 999L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -438,8 +437,8 @@ public class ProductControllerTest {
     void updateProduct_nameBlank_returnsBadRequestWithMessage() throws Exception {
         //given
         UpdateProductRequest request = new UpdateProductRequest("", "Computer", "MyShop",
-                new CreatePriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
-        //when + then
+                new PriceRequest(new BigDecimal("2600.00"), new BigDecimal("0.23"), "PLN"), true);
+        //when //then
         mockMvc.perform(put("/products/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -453,7 +452,7 @@ public class ProductControllerTest {
     void updateProduct_priceNull_returnsBadRequestWithMessage() throws Exception {
         //given
         UpdateProductRequest request = new UpdateProductRequest("Office PC v2", "Computer", "MyShop", null, true);
-        //when + then
+        //when //then
         mockMvc.perform(put("/products/{id}", 2L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
@@ -467,7 +466,7 @@ public class ProductControllerTest {
     void deleteProduct_productExists_returnsNoContent() throws Exception {
         //given
         ArgumentCaptor<Long> idCaptor = ArgumentCaptor.forClass(Long.class);
-        //when + then
+        //when //then
         mockMvc.perform(delete("/products/{id}", 5L))
                 .andExpect(status().isNoContent());
         Mockito.verify(productService).deleteProduct(idCaptor.capture());
@@ -478,7 +477,7 @@ public class ProductControllerTest {
     void deleteProduct_productNotExists_returnsNotFoundWithMessage() throws Exception {
         //given
         Mockito.doThrow(new ProductNotFoundException(999L)).when(productService).deleteProduct(999L);
-        //when + then
+        //when //then
         mockMvc.perform(delete("/products/{id}", 999L))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("PRODUCT_NOT_FOUND"))
@@ -490,7 +489,7 @@ public class ProductControllerTest {
         //given
         Mockito.doThrow(new DataIntegrityViolationException("fk_product_configurations_component"))
                 .when(productService).deleteProduct(6L);
-        //when + then
+        //when //then
         mockMvc.perform(delete("/products/{id}", 6L))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.errorCode").value("DATA_CONFLICT"));

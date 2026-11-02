@@ -7,4 +7,5 @@ public record ProductConfigurationResponse(
         String componentName,
         boolean defaultComponent,
         boolean multiSelect
-) {}
+) {
+}

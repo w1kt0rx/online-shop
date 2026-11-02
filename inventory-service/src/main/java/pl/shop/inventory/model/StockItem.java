@@ -1,0 +1,70 @@
+package pl.shop.inventory.model;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import pl.shop.inventory.exception.InvalidQuantityException;
+
+@Entity
+@Table(name = "stock_items")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class StockItem {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private Long productId;
+
+    @Column(nullable = false)
+    private int quantity;
+
+    @Version
+    private Long version;
+
+    public StockItem(Long productId) {
+        validateProductId(productId);
+        this.productId = productId;
+        this.quantity = 0;
+    }
+
+    public void changeQuantity(int newQuantity) {
+        validateNotNegative(newQuantity);
+        this.quantity = newQuantity;
+    }
+
+    public void increase(int amount) {
+        validatePositive(amount);
+        this.quantity += amount;
+    }
+
+    public boolean isInStock() {
+        return quantity > 0;
+    }
+
+    private void validateProductId(Long productId) {
+        if (productId == null || productId <= 0) {
+            throw new IllegalArgumentException("Product id must be positive: " + productId);
+        }
+    }
+
+    private void validateNotNegative(int value) {
+        if (value < 0) {
+            throw new InvalidQuantityException("Quantity cannot be negative: " + value);
+        }
+    }
+
+    private void validatePositive(int value) {
+        if (value <= 0) {
+            throw new InvalidQuantityException("Amount must be greater than 0: " + value);
+        }
+    }
+}

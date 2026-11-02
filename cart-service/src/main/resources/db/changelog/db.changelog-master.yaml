@@ -1,3 +1,10 @@
 databaseChangeLog:
   - include:
-      file: db/changelog/changes/001-init-schema.sql
+      file: changes/001-create-carts-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/002-create-cart-items-table.yaml
+      relativeToChangelogFile: true
+  - include:
+      file: changes/003-create-cart-item-components-table.yaml
+      relativeToChangelogFile: true
