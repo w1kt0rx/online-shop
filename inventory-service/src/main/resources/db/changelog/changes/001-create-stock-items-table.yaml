@@ -34,4 +34,5 @@ databaseChangeLog:
                   constraints:
                     nullable: false
         - sql:
+            dbms: postgresql
             sql: ALTER TABLE stock_items ADD CONSTRAINT chk_stock_items_quantity CHECK (quantity >= 0)

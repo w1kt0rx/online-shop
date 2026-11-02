@@ -1,3 +1,4 @@
 databaseChangeLog:
   - include:
-      file: db/changelog/changes/001-create-stock-items-table.yaml
+      file: changes/001-create-stock-items-table.yaml
+      relativeToChangelogFile: true

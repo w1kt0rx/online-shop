@@ -5,8 +5,9 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 public class InventoryServiceException extends RuntimeException {
-    private String errorCode;
-    private HttpStatus status;
+    private final String errorCode;
+    private final HttpStatus status;
+
     public InventoryServiceException(String errorCode, String message, HttpStatus status) {
         super(message);
         this.errorCode = errorCode;

@@ -2,7 +2,7 @@ package pl.shop.product.mapper;
 
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import pl.shop.product.dto.request.CreatePriceRequest;
+import pl.shop.product.dto.request.PriceRequest;
 import pl.shop.product.dto.response.PriceResponse;
 import pl.shop.product.model.Price;
 
@@ -10,8 +10,7 @@ import pl.shop.product.model.Price;
 public interface PriceMapper {
 
     @Mapping(target = "withNetPrice", ignore = true)
-    @Mapping(target = "withVatRate", ignore = true)
-    Price toEntity(CreatePriceRequest request);
+    Price toEntity(PriceRequest request);
 
-    PriceResponse toDto(Price price);
+    PriceResponse toResponse(Price price);
 }

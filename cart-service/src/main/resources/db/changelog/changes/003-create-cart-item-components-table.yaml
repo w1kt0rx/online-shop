@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 3
+      author: w1kt0r
+      changes:
+        - createTable:
+            tableName: cart_item_components
+            columns:
+              - column:
+                  name: cart_item_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_cart_item_components_item
+                    references: cart_items(id)
+                    deleteCascade: true
+              - column:
+                  name: configuration_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: component_product_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: slot
+                  type: VARCHAR(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: component_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false

@@ -10,7 +10,5 @@ public record ProductResponse(
         PriceResponse price,
         boolean sellableSeparately,
         List<ProductConfigurationResponse> configurations
-
-
 ) {
 }

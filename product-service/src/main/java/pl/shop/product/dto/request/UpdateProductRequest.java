@@ -20,7 +20,7 @@ public record UpdateProductRequest(
 
         @NotNull(message = "Price details are required")
         @Valid
-        CreatePriceRequest price,
+        PriceRequest price,
 
         @NotNull(message = "Sellable separately flag must be specified")
         Boolean sellableSeparately

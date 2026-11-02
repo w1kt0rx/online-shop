@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:17
@@ -25,6 +23,7 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
     ports:
       - "9200:9200"
     volumes:
@@ -45,12 +44,6 @@ services:
     depends_on:
       elasticsearch:
         condition: service_healthy
-    healthcheck:
-      test: [ "CMD-SHELL", "curl -s http://localhost:9600 > /dev/null || exit 1" ]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 30s
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.18
@@ -119,15 +112,13 @@ services:
       DB_PASSWORD: shop
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       LOGSTASH_HOST: logstash
-    volumes:
-      - ./logs:/app/logs
     depends_on:
       postgres:
         condition: service_healthy
-      logstash:
-        condition: service_started
       kafka:
         condition: service_healthy
+      logstash:
+        condition: service_started
 
   inventory-service:
     build:
@@ -144,15 +135,39 @@ services:
       DB_PASSWORD: shop
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       LOGSTASH_HOST: logstash
-    volumes:
-      - ./logs:/app/logs
     depends_on:
-      logstash:
-        condition: service_healthy
       postgres:
         condition: service_healthy
       kafka:
         condition: service_healthy
+      logstash:
+        condition: service_started
+
+  cart-service:
+    build:
+      context: ./cart-service
+    container_name: cart-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: shop
+      DB_USERNAME: shop
+      DB_PASSWORD: shop
+      PRODUCT_SERVICE_URL: http://product-service:8081
+      INVENTORY_SERVICE_URL: http://inventory-service:8082
+      LOGSTASH_HOST: logstash
+    depends_on:
+      postgres:
+        condition: service_healthy
+      product-service:
+        condition: service_started
+      inventory-service:
+        condition: service_started
+      logstash:
+        condition: service_started
 
 volumes:
   postgres-data:

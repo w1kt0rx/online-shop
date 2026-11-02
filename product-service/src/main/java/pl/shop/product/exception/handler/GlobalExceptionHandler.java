@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -23,42 +24,29 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ProductServiceException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(ProductServiceException ex) {
-        log.warn("Product service exception occurred: code='{}', message='{}', status={}",
+        log.warn("Product service exception occurred: code = {}, message = {}, status = {}",
                 ex.getErrorCode(), ex.getMessage(), ex.getStatus());
-        return status(ex);
+        return ResponseEntity.status(ex.getStatus())
+                .body(new ErrorResponse(ex.getStatus().value(), ex.getErrorCode(), ex.getMessage()));
     }
 
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         String errors = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
                 .map(error -> error.getField() + ": " + error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-
         log.warn("Validation error: {}", errors);
-        return ResponseEntity.badRequest().body(new ErrorResponse(ex.getStatusCode().value(), "ARGUMENT_NOT_VALID", "Validation failed: " + errors));
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "ARGUMENT_NOT_VALID", "Validation failed: " + errors));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleNotReadable(HttpMessageNotReadableException ex) {
+        log.warn("Malformed request body: {}", ex.getMessage());
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(400, "MALFORMED_REQUEST", "Request body is invalid or malformed"));
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleConflict(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation", ex);
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ErrorResponse(409, "DATA_CONFLICT", "Operation violates data constraints"));
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
-        log.error("Unexpected error", ex);
-        return ResponseEntity.internalServerError()
-                .body(new ErrorResponse(500, "INTERNAL_ERROR", "Unexpected error occurred"));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -67,10 +55,23 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(400, "TYPE_MISMATCH", "Invalid value for parameter: " + ex.getName()));
     }
 
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return ResponseEntity.badRequest()
+                .body(new ErrorResponse(400, "MISSING_PARAMETER", "Missing request parameter: " + ex.getParameterName()));
+    }
+
     @ExceptionHandler(PropertyReferenceException.class)
     public ResponseEntity<ErrorResponse> handleInvalidSort(PropertyReferenceException ex) {
         return ResponseEntity.badRequest()
                 .body(new ErrorResponse(400, "INVALID_SORT_PROPERTY", "Cannot sort by: " + ex.getPropertyName()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConflict(DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation", ex);
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(409, "DATA_CONFLICT", "Operation violates data constraints"));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
@@ -85,9 +86,10 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(405, "METHOD_NOT_ALLOWED", "Method not allowed: " + ex.getMethod()));
     }
 
-
-    private ResponseEntity<ErrorResponse> status(ProductServiceException ex) {
-        ErrorResponse body = new ErrorResponse(ex.getStatus().value(), ex.getErrorCode(), ex.getMessage());
-        return ResponseEntity.status(ex.getStatus()).body(body);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
+        log.error("Unexpected error", ex);
+        return ResponseEntity.internalServerError()
+                .body(new ErrorResponse(500, "INTERNAL_ERROR", "Unexpected error occurred"));
     }
 }
