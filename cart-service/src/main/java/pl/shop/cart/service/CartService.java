@@ -96,6 +96,25 @@ public class CartService {
         return cartMapper.toResponse(cart);
     }
 
+    @Transactional
+    public void markAsOrdered(Long cartId) {
+        log.debug("Attempting to mark cart with id = {} as ordered", cartId);
+        cartRepository.findById(cartId)
+                .ifPresentOrElse(
+                        this::markExistingAsOrdered,
+                        () -> log.warn("Cart with id = {} doesn't exist, skipping", cartId)
+                );
+    }
+
+    private void markExistingAsOrdered(Cart cart) {
+        if (cart.isOrdered()) {
+            log.info("Cart with id = {} is already ordered, skipping", cart.getId());
+            return;
+        }
+        cart.markAsOrdered();
+        log.info("Cart with id = {} marked as ordered", cart.getId());
+    }
+
     private Map<Long, Integer> requiredQuantities(Cart cart) {
         Map<Long, Integer> required = new LinkedHashMap<>();
         for (CartItem item : cart.getItems()) {

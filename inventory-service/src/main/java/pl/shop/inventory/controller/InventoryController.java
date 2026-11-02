@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import pl.shop.inventory.dto.request.ChangeQuantityRequest;
 import pl.shop.inventory.dto.request.DeliveryRequest;
+import pl.shop.inventory.dto.request.StockReservationRequest;
 import pl.shop.inventory.dto.response.StockResponse;
 import pl.shop.inventory.service.InventoryService;
 
@@ -53,5 +54,19 @@ public class InventoryController {
     public StockResponse registerDelivery(@PathVariable Long productId, @Valid @RequestBody DeliveryRequest request) {
         log.info("Received POST request to register delivery of product with id = {}", productId);
         return inventoryService.registerDelivery(productId, request);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/reservations")
+    public List<StockResponse> reserve(@Valid @RequestBody StockReservationRequest request) {
+        log.info("Received POST request to reserve stock for order = {}", request.orderNumber());
+        return inventoryService.reserve(request);
+    }
+
+    @ResponseStatus(HttpStatus.OK)
+    @PostMapping("/releases")
+    public List<StockResponse> release(@Valid @RequestBody StockReservationRequest request) {
+        log.info("Received POST request to release stock for order = {}", request.orderNumber());
+        return inventoryService.release(request);
     }
 }

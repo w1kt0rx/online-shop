@@ -217,4 +217,30 @@ public class CartTest {
                 () -> cart.getItems().clear()
         );
     }
+
+    @Test
+    void markAsOrdered_cartActive_statusOrdered() {
+        //given
+        Cart cart = Cart.create();
+        //when
+        cart.markAsOrdered();
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(CartStatus.ORDERED, cart.getStatus()),
+                () -> Assertions.assertTrue(cart.isOrdered())
+        );
+    }
+
+    @Test
+    void markAsOrdered_cartAlreadyOrdered_throwsCartAlreadyOrderedException() {
+        //given
+        Cart cart = Cart.create();
+        ReflectionTestUtils.setField(cart, "id", 1L);
+        cart.markAsOrdered();
+        //when //then
+        Assertions.assertThrows(
+                CartAlreadyOrderedException.class,
+                cart::markAsOrdered
+        );
+    }
 }

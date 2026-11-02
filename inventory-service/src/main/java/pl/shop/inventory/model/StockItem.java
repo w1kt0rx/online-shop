@@ -10,6 +10,7 @@ import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import pl.shop.inventory.exception.InsufficientStockException;
 import pl.shop.inventory.exception.InvalidQuantityException;
 
 @Entity
@@ -44,6 +45,18 @@ public class StockItem {
     public void increase(int amount) {
         validatePositive(amount);
         this.quantity += amount;
+    }
+
+    public void decrease(int amount) {
+        validatePositive(amount);
+        if (!hasAtLeast(amount)) {
+            throw new InsufficientStockException(productId, amount, quantity);
+        }
+        this.quantity -= amount;
+    }
+
+    public boolean hasAtLeast(int amount) {
+        return quantity >= amount;
     }
 
     public boolean isInStock() {

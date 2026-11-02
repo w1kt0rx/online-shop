@@ -14,7 +14,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import pl.shop.inventory.dto.request.ChangeQuantityRequest;
 import pl.shop.inventory.dto.request.DeliveryRequest;
+import pl.shop.inventory.dto.request.StockReservationItemRequest;
+import pl.shop.inventory.dto.request.StockReservationRequest;
 import pl.shop.inventory.dto.response.StockResponse;
+import pl.shop.inventory.exception.InsufficientStockException;
 import pl.shop.inventory.exception.InvalidQuantityException;
 import pl.shop.inventory.exception.StockItemNotFoundException;
 import pl.shop.inventory.service.InventoryService;
@@ -265,5 +268,98 @@ public class InventoryControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.errorCode").value("STOCK_ITEM_NOT_FOUND"));
+    }
+
+    @Test
+    void reserve_dataCorrect_returnsDecreasedStock() throws Exception {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(5L, 2),
+                new StockReservationItemRequest(2L, 2)
+        ));
+        ArgumentCaptor<StockReservationRequest> requestCaptor = ArgumentCaptor.forClass(StockReservationRequest.class);
+        when(inventoryService.reserve(any(StockReservationRequest.class))).thenReturn(List.of(
+                new StockResponse(5L, 8, true),
+                new StockResponse(2L, 0, false)
+        ));
+        //when //then
+        mockMvc.perform(post("/inventory/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].quantity").value(8))
+                .andExpect(jsonPath("$[1].available").value(false));
+        Mockito.verify(inventoryService).reserve(requestCaptor.capture());
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("order-1", requestCaptor.getValue().orderNumber()),
+                () -> Assertions.assertEquals(2, requestCaptor.getValue().items().size()),
+                () -> Assertions.assertEquals(2L, requestCaptor.getValue().items().get(1).productId())
+        );
+    }
+
+    @Test
+    void reserve_insufficientStock_returnsConflictWithMessage() throws Exception {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(2L, 3)
+        ));
+        when(inventoryService.reserve(any(StockReservationRequest.class)))
+                .thenThrow(new InsufficientStockException(2L, 3, 2));
+        //when //then
+        mockMvc.perform(post("/inventory/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.errorCode").value("INSUFFICIENT_STOCK"))
+                .andExpect(jsonPath("$.message").value("Insufficient stock for product with id = 2. Requested: 3, available: 2"));
+    }
+
+    @Test
+    void reserve_itemsEmpty_returnsBadRequestWithMessage() throws Exception {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of());
+        //when //then
+        mockMvc.perform(post("/inventory/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("ARGUMENT_NOT_VALID"))
+                .andExpect(jsonPath("$.message", Matchers.containsString("Reservation must contain at least one item")));
+        Mockito.verify(inventoryService, Mockito.never()).reserve(any());
+    }
+
+    @Test
+    void reserve_itemQuantityZero_returnsBadRequestWithMessage() throws Exception {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(2L, 0)
+        ));
+        //when //then
+        mockMvc.perform(post("/inventory/reservations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", Matchers.containsString("Quantity must be at least 1")));
+        Mockito.verify(inventoryService, Mockito.never()).reserve(any());
+    }
+
+    @Test
+    void release_dataCorrect_returnsIncreasedStock() throws Exception {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(2L, 2)
+        ));
+        ArgumentCaptor<StockReservationRequest> requestCaptor = ArgumentCaptor.forClass(StockReservationRequest.class);
+        when(inventoryService.release(any(StockReservationRequest.class))).thenReturn(List.of(new StockResponse(2L, 2, true)));
+        //when //then
+        mockMvc.perform(post("/inventory/releases")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].productId").value(2L))
+                .andExpect(jsonPath("$[0].quantity").value(2));
+        Mockito.verify(inventoryService).release(requestCaptor.capture());
+        Assertions.assertEquals("order-1", requestCaptor.getValue().orderNumber());
     }
 }
