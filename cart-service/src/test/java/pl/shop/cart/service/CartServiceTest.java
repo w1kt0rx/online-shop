@@ -9,7 +9,6 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mockito;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 import pl.shop.cart.client.InventoryServiceClient;
 import pl.shop.cart.client.ProductServiceClient;
@@ -496,5 +495,40 @@ public class CartServiceTest {
                 CartNotFoundException.class,
                 () -> cartService.removeItem(999L, 100L)
         );
+    }
+
+    @Test
+    void markAsOrdered_cartActive_statusChangedToOrdered() {
+        //given
+        Cart cart = Cart.create();
+        ReflectionTestUtils.setField(cart, "id", 1L);
+        when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
+        //when
+        cartService.markAsOrdered(1L);
+        //then
+        Assertions.assertEquals(CartStatus.ORDERED, cart.getStatus());
+    }
+
+    @Test
+    void markAsOrdered_cartAlreadyOrdered_noExceptionAndStatusUnchanged() {
+        //given
+        Cart cart = Cart.create();
+        ReflectionTestUtils.setField(cart, "id", 1L);
+        ReflectionTestUtils.setField(cart, "status", CartStatus.ORDERED);
+        when(cartRepository.findById(1L)).thenReturn(Optional.of(cart));
+        //when
+        Assertions.assertDoesNotThrow(() -> cartService.markAsOrdered(1L));
+        //then
+        Assertions.assertEquals(CartStatus.ORDERED, cart.getStatus());
+    }
+
+    @Test
+    void markAsOrdered_cartNotExists_noException() {
+        //given
+        when(cartRepository.findById(999L)).thenReturn(Optional.empty());
+        //when
+        Assertions.assertDoesNotThrow(() -> cartService.markAsOrdered(999L));
+        //then
+        Mockito.verify(cartRepository).findById(999L);
     }
 }

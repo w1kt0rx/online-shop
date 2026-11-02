@@ -9,7 +9,10 @@ import org.mockito.Mockito;
 import org.springframework.test.util.ReflectionTestUtils;
 import pl.shop.inventory.dto.request.ChangeQuantityRequest;
 import pl.shop.inventory.dto.request.DeliveryRequest;
+import pl.shop.inventory.dto.request.StockReservationItemRequest;
+import pl.shop.inventory.dto.request.StockReservationRequest;
 import pl.shop.inventory.dto.response.StockResponse;
+import pl.shop.inventory.exception.InsufficientStockException;
 import pl.shop.inventory.exception.InvalidQuantityException;
 import pl.shop.inventory.exception.StockItemNotFoundException;
 import pl.shop.inventory.mapper.InventoryMapper;
@@ -238,5 +241,108 @@ public class InventoryServiceTest {
         inventoryService.deleteStockItem(999L);
         //then
         Mockito.verify(inventoryRepository, Mockito.never()).delete(any());
+    }
+
+    @Test
+    void reserve_allProductsAvailable_allQuantitiesDecreased() {
+        //given
+        StockItem pc = new StockItem(5L);
+        pc.changeQuantity(10);
+        StockItem gpu = new StockItem(2L);
+        gpu.changeQuantity(2);
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(5L, 2),
+                new StockReservationItemRequest(2L, 2)
+        ));
+        when(inventoryRepository.findAllByProductIdIn(any())).thenReturn(List.of(pc, gpu));
+        //when
+        List<StockResponse> responses = inventoryService.reserve(request);
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(8, pc.getQuantity()),
+                () -> Assertions.assertEquals(0, gpu.getQuantity()),
+                () -> Assertions.assertEquals(new StockResponse(5L, 8, true), responses.get(0)),
+                () -> Assertions.assertEquals(new StockResponse(2L, 0, false), responses.get(1))
+        );
+    }
+
+    @Test
+    void reserve_oneProductInsufficient_throwsInsufficientStockExceptionAndNothingDecreased() {
+        //given
+        StockItem pc = new StockItem(5L);
+        pc.changeQuantity(10);
+        StockItem gpu = new StockItem(2L);
+        gpu.changeQuantity(1);
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(5L, 2),
+                new StockReservationItemRequest(2L, 2)
+        ));
+        when(inventoryRepository.findAllByProductIdIn(any())).thenReturn(List.of(pc, gpu));
+        //when //then
+        InsufficientStockException ex = Assertions.assertThrows(
+                InsufficientStockException.class,
+                () -> inventoryService.reserve(request)
+        );
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("Insufficient stock for product with id = 2. Requested: 2, available: 1", ex.getMessage()),
+                () -> Assertions.assertEquals(10, pc.getQuantity()),
+                () -> Assertions.assertEquals(1, gpu.getQuantity())
+        );
+    }
+
+    @Test
+    void reserve_productMissingInStock_throwsInsufficientStockExceptionWithZeroAvailable() {
+        //given
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(99L, 1)
+        ));
+        when(inventoryRepository.findAllByProductIdIn(any())).thenReturn(List.of());
+        //when //then
+        InsufficientStockException ex = Assertions.assertThrows(
+                InsufficientStockException.class,
+                () -> inventoryService.reserve(request)
+        );
+        Assertions.assertEquals("Insufficient stock for product with id = 99. Requested: 1, available: 0", ex.getMessage());
+    }
+
+    @Test
+    void release_productsExist_quantitiesIncreased() {
+        //given
+        StockItem pc = new StockItem(5L);
+        pc.changeQuantity(8);
+        StockItem gpu = new StockItem(2L);
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(5L, 2),
+                new StockReservationItemRequest(2L, 2)
+        ));
+        when(inventoryRepository.findAllByProductIdIn(any())).thenReturn(List.of(pc, gpu));
+        //when
+        List<StockResponse> responses = inventoryService.release(request);
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(10, pc.getQuantity()),
+                () -> Assertions.assertEquals(2, gpu.getQuantity()),
+                () -> Assertions.assertEquals(2, responses.size())
+        );
+    }
+
+    @Test
+    void release_productDeletedFromStock_skippedAndOthersIncreased() {
+        //given
+        StockItem pc = new StockItem(5L);
+        pc.changeQuantity(8);
+        StockReservationRequest request = new StockReservationRequest("order-1", List.of(
+                new StockReservationItemRequest(5L, 2),
+                new StockReservationItemRequest(6L, 1)
+        ));
+        when(inventoryRepository.findAllByProductIdIn(any())).thenReturn(List.of(pc));
+        //when
+        List<StockResponse> responses = inventoryService.release(request);
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(10, pc.getQuantity()),
+                () -> Assertions.assertEquals(1, responses.size()),
+                () -> Assertions.assertEquals(5L, responses.getFirst().productId())
+        );
     }
 }

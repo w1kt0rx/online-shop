@@ -2,6 +2,7 @@ package pl.shop.inventory.model;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import pl.shop.inventory.exception.InsufficientStockException;
 import pl.shop.inventory.exception.InvalidQuantityException;
 
 public class StockItemTest {
@@ -112,6 +113,60 @@ public class StockItemTest {
         Assertions.assertAll(
                 () -> Assertions.assertEquals("Amount must be greater than 0: 0", ex.getMessage()),
                 () -> Assertions.assertEquals(10, stockItem.getQuantity())
+        );
+    }
+
+    @Test
+    void decrease_amountAvailable_quantityDecreased() {
+        //given
+        StockItem stockItem = new StockItem(4L);
+        stockItem.changeQuantity(10);
+        //when
+        stockItem.decrease(4);
+        //then
+        Assertions.assertEquals(6, stockItem.getQuantity());
+    }
+
+    @Test
+    void decrease_wholeQuantity_quantityZeroAndNotInStock() {
+        //given
+        StockItem stockItem = new StockItem(4L);
+        stockItem.changeQuantity(2);
+        //when
+        stockItem.decrease(2);
+        //then
+        Assertions.assertAll(
+                () -> Assertions.assertEquals(0, stockItem.getQuantity()),
+                () -> Assertions.assertFalse(stockItem.isInStock())
+        );
+    }
+
+    @Test
+    void decrease_amountAboveQuantity_throwsInsufficientStockExceptionAndQuantityUnchanged() {
+        //given
+        StockItem stockItem = new StockItem(4L);
+        stockItem.changeQuantity(2);
+        //when //then
+        InsufficientStockException ex = Assertions.assertThrows(
+                InsufficientStockException.class,
+                () -> stockItem.decrease(3)
+        );
+        Assertions.assertAll(
+                () -> Assertions.assertEquals("INSUFFICIENT_STOCK", ex.getErrorCode()),
+                () -> Assertions.assertEquals("Insufficient stock for product with id = 4. Requested: 3, available: 2", ex.getMessage()),
+                () -> Assertions.assertEquals(2, stockItem.getQuantity())
+        );
+    }
+
+    @Test
+    void decrease_amountZero_throwsInvalidQuantityException() {
+        //given
+        StockItem stockItem = new StockItem(4L);
+        stockItem.changeQuantity(2);
+        //when //then
+        Assertions.assertThrows(
+                InvalidQuantityException.class,
+                () -> stockItem.decrease(0)
         );
     }
 }

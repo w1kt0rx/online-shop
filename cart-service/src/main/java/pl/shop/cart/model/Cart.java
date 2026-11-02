@@ -73,6 +73,11 @@ public class Cart {
         }
     }
 
+    public void markAsOrdered() {
+        validateActive();
+        this.status = CartStatus.ORDERED;
+    }
+
     public CartItem findItem(Long itemId) {
         return items.stream()
                 .filter(item -> Objects.equals(item.getId(), itemId))
