@@ -22,6 +22,8 @@
         <module>inventory-service</module>
         <module>cart-service</module>
         <module>order-service</module>
+        <module>invoice-service</module>
+        <module>user-interaction-service</module>
     </modules>
 
     <properties>

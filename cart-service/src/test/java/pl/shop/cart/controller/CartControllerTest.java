@@ -266,7 +266,7 @@ public class CartControllerTest {
     }
 
     @Test
-    void addItem_productServiceReturnsNotFound_returnsNotFound() throws Exception {
+    void addItem_productServiceReturnsNotFound_returnsNotFoundError() throws Exception {
         //given
         AddCartItemRequest request = new AddCartItemRequest(999L, List.of(), 1);
         Request feignRequest = Request.create(Request.HttpMethod.POST, "http://localhost:8081/products/999/configurations/quote",
