@@ -201,6 +201,57 @@ services:
       logstash:
         condition: service_started
 
+  invoice-service:
+    build:
+      context: ./invoice-service
+    container_name: invoice-service
+    ports:
+      - "8085:8085"
+    environment:
+      SERVER_PORT: 8085
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: shop
+      DB_USERNAME: shop
+      DB_PASSWORD: shop
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      LOGSTASH_HOST: logstash
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      logstash:
+        condition: service_started
+
+#  user-interaction-service:
+#    build:
+#      context: ./user-interaction-service
+#    container_name: user-interaction-service
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      SERVER_PORT: 8080
+#      PRODUCT_SERVICE_URL: http://product-service:8081
+#      INVENTORY_SERVICE_URL: http://inventory-service:8082
+#      CART_SERVICE_URL: http://cart-service:8083
+#      ORDER_SERVICE_URL: http://order-service:8084
+#      INVOICE_SERVICE_URL: http://invoice-service:8085
+#      LOGSTASH_HOST: logstash
+#    depends_on:
+#      product-service:
+#        condition: service_started
+#      inventory-service:
+#        condition: service_started
+#      cart-service:
+#        condition: service_started
+#      order-service:
+#        condition: service_started
+#      invoice-service:
+#        condition: service_started
+#      logstash:
+#        condition: service_started
+
 volumes:
   postgres-data:
   es_data:
