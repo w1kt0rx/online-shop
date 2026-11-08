@@ -9,7 +9,6 @@ import java.util.List;
 public record StockReservationRequest(
         @NotBlank(message = "Order number is required")
         String orderNumber,
-
         @NotEmpty(message = "Reservation must contain at least one item")
         List<@Valid StockReservationItemRequest> items
 ) {

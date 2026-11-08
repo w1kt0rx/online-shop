@@ -10,13 +10,10 @@ import pl.shop.product.model.SortDirection;
 public record PaginationRequest(
         @Min(value = 0, message = "Page number cannot be negative")
         Integer page,
-
         @Min(value = 1, message = "Page size must be at least 1")
         @Max(value = 100, message = "Page size cannot exceed 100")
         Integer size,
-
         String sortBy,
-
         SortDirection direction
 ) {
     private static final int DEFAULT_PAGE = 0;
